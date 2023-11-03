@@ -65,18 +65,16 @@ modalDiv.appendChild(movieImage);
 const btnCerrarModal = document.createElement("button");
 btnCerrarModal.textContent = "Cerrar Modal";
 btnCerrarModal.addEventListener('click', () => {
-  // Establecer estilos para ocultar el modal
   modalDiv.style.display = "none";
-  // Agregar la clase "movie-close" cuando el modal está cerrado
+
   modalDiv.classList.add("movie-close");
 });
 
 const btnAbrirModal = movieContainer;
-btnAbrirModal.textContent = "Abrir Modal";
 btnAbrirModal.addEventListener('click', () => {
-  // Establecer estilos para mostrar el modal
+
   modalDiv.style.display = "block";
-  // Eliminar la clase "movie-close" cuando el modal está abierto
+
   modalDiv.classList.remove("movie-close");
 });
 
@@ -160,7 +158,6 @@ btnAbrirModal.addEventListener('click', () => {
 
 
 
-  // Crear una función de manejo de eventos para este botón y película
   btnAddWatched.addEventListener("click", async () => {
     try {
       const genresResponse = await fetch(`${API_URL}/movie/${movie.id}?api_key=${API_KEY}`);
