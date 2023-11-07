@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   const API_KEY = "d62e671e72a3270f6005a951e144404c"; // Reemplaza con tu clave de API de TMDb
   const API_URL = "https://api.themoviedb.org/3";
@@ -207,25 +208,158 @@ document.addEventListener("DOMContentLoaded", () => {
 // fetchPopularMovies(currentPage);
 
 // Boton my library 
-const btnMyLibrary = document.querySelector('.my-library-btn');
-const conteinerLibrarySearch = document.querySelector(
-  '.search-container'
-);
+import atributosMovies from "./atributosMovies";
 
-btnMyLibrary.addEventListener('click', event => {
-    event.preventDefault();
-    conteinerLibrarySearch.innerHTML = '';
-    const wachedBtn = document.createElement('button');
-    const queveBtn = document.createElement('button');
-    wachedBtn.textContent = 'WATCHED';
-    queveBtn.textContent = 'QUEVE';
-    wachedBtn.classList.add("library-container__button--active");
-    queveBtn.classList.add('library-container__button--transparent');
-    conteinerLibrarySearch.classList.add('library-container__button')
-    conteinerLibrarySearch.append(wachedBtn, queveBtn);
+document.addEventListener("DOMContentLoaded", () => {
+  const API_KEY = "d62e671e72a3270f6005a951e144404c";
+  const API_URL = "https://api.themoviedb.org/3";
+  const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+  const movieListContainer = document.getElementById("movie-list");
+  const paginationNumbers = document.getElementById("pagination-numbers");
+  const prevButton = document.getElementById("prev-button");
+  const nextButton = document.getElementById("next-button");
+
+  let currentPage = 1;
+  const moviesPerPage = 9;
+  let totalMovies = 0;
+  let totalPages = 0;
+
+  let selectedMovies = JSON.parse(localStorage.getItem("selectedMovies")) || [];
+  // Array para la cola
+  let selectedQueueMovies = JSON.parse(localStorage.getItem("selectedQueueMovies")) || [];
+
+  async function fetchPopularMovies(page) {
+    try {
+      const response = await fetch(`${API_URL}/movie/popular?api_key=${API_KEY}&page=${page}`);
+      const data = await response.json();
+      movieListContainer.innerHTML = "";
+
+      if (page === 1) {
+        totalMovies = data.total_results;
+        totalPages = Math.ceil(totalMovies / moviesPerPage);
+      }
+
+      const startIndex = (page - 1) * moviesPerPage;
+      const endIndex = startIndex + moviesPerPage;
+
+      data.results.slice(startIndex, endIndex).forEach(async (movie) => {
+        await atributosMovies(movie, API_URL, API_KEY, IMAGE_BASE_URL, movieListContainer);
+
+        const btnAddWatched = document.getElementById("addToWatched");
+        const btnAddQueue = document.getElementById("addToQueue");
+        
+        btnAddWatched.addEventListener("click", async () => {
+          try {
+            const genresResponse = await fetch(`${API_URL}/movie/${movie.id}?api_key=${API_KEY}`);
+            const genresData = await genresResponse.json();
+            const genreNames = genresData.genres.map((genre) => genre.name).join(", ");
+            const selectedMovie = {
+              title: movie.title,
+              poster_path: IMAGE_BASE_URL + movie.poster_path,
+              genres: genreNames,
+              rating: movie.vote_average || "No disponible",
+            };
+            selectedMovies.push(selectedMovie);
+            console.log("Película seleccionada:", selectedMovie);
+            console.log("Películas seleccionadas:", selectedMovies);
+            localStorage.setItem("selectedMovies", JSON.stringify(selectedMovies));
+          } catch (error) {
+            console.log("Error al obtener géneros:", error);
+          }
+        });
+
+        btnAddQueue.addEventListener("click", async () => {
+          try {
+            const genresResponse = await fetch(`${API_URL}/movie/${movie.id}?api_key=${API_KEY}`);
+            const genresData = await genresResponse.json();
+            const genreNames = genresData.genres.map((genre) => genre.name).join(", ");
+            const selectedQueueMovie = {
+              title: movie.title,
+              poster_path: IMAGE_BASE_URL + movie.poster_path,
+              genres: genreNames,
+              rating: movie.vote_average,
+            };
+            const existingQueueMovies = JSON.parse(localStorage.getItem("selectedQueueMovies")) || [];
+            existingQueueMovies.push(selectedQueueMovie);
+            console.log("Película seleccionada:", selectedQueueMovie);
+            console.log("Películas seleccionadas:", existingQueueMovies);
+            localStorage.setItem("selectedQueueMovies", JSON.stringify(existingQueueMovies));
+          } catch (error) {
+            console.log("Error al obtener géneros:", error);
+          }
+        });
+      });
+
+      // Actualizar la paginación
+      paginationNumbers.innerHTML = "";
+      const maxPages = Math.min(totalPages, 5);
+
+      for (let i = 1; i <= maxPages; i++) {
+        const button = document.createElement("button");
+        button.classList.add("pagination-number");
+        button.textContent = i;
+        if (i === currentPage) {
+          button.classList.add("active");
+        }
+        button.addEventListener("click", () => {
+          currentPage = i;
+          fetchPopularMovies(currentPage);
+        });
+        paginationNumbers.appendChild(button);
+      }
+
+      if (totalPages > 20) {
+        const dots = document.createElement("span");
+        dots.textContent = "...";
+        paginationNumbers.appendChild(dots);
+      }
+
+      prevButton.disabled = currentPage === 1;
+      nextButton.disabled = currentPage === totalPages;
+
+    } catch (error) {
+      console.error("Error al obtener películas populares:", error);
+    }
+  }
+
+  prevButton.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      fetchPopularMovies(currentPage);
+    }
+  });
+
+  nextButton.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      fetchPopularMovies(currentPage);
+    }
+  });
+
+  fetchPopularMovies(currentPage);
 });
 
+const btnMyLibrary = document.querySelector('.my-library-btn');
+const containerLibrarySearch = document.querySelector('.search-container');
 
+btnMyLibrary.addEventListener('click', event => {
+  event.preventDefault();
+  containerLibrarySearch.innerHTML = '';
+  const watchedBtn = document.createElement('button');
+  const queueBtn = document.createElement('button');
+  watchedBtn.textContent = 'WATCHED';
+  queueBtn.textContent = 'QUEUE';
+  watchedBtn.classList.add("library-container__button--active");
+  queueBtn.classList.add('library-container__button--transparent');
+  containerLibrarySearch.classList.add('library-container__button');
+  containerLibrarySearch.append(watchedBtn, queueBtn);
+});
+
+// BUSQUEDA DE PELÍCULAS POR NOMBRE
+
+const searchInputBusqueda = document.getElementById("search-input");
+const searchButton = document.getElementById("search-button");
 
 const apiKey = "d62e671e72a3270f6005a951e144404c"
 function showMovieModal(movieId) {
@@ -236,49 +370,32 @@ function showMovieModal(movieId) {
     });
 }
 
+searchButton.addEventListener("click", (e) => {
+  if (searchInputBusqueda.value === "") {
+    e.preventDefault();
+  } else {
+    const searchTerm = searchInputBusqueda.value;
+    searchMoviesByTitle(searchTerm);
+  }
+});
 
+async function searchMoviesByTitle(searchTerm) {
+  const API_KEY = "d62e671e72a3270f6005a951e144404c";
+  const API_URL = "https://api.themoviedb.org/3";
+  const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+  const movieListContainer = document.getElementById("movie-list");
 
+  try {
+    const response = await fetch(
+      `${API_URL}/search/movie?api_key=${API_KEY}&query=${searchTerm}&include_adult=false&language=en-US`
+    );
+    const data = await response.json();
+    movieListContainer.innerHTML = "";
 
-
-
-
-
-
-
-
-
-
-
-
-const config = {
-  headers: {
-    'accept': 'application/json',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkNjJlNjcxZTcyYTMyNzBmNjAwNWE5NTFlMTQ0NDA0YyIsInN1YiI6IjY1MzliYWFkMDkxZTYyMDBhY2JjZmIxYiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.kl2esxdpMndC8Ncdl_j46puXA1C37-yIPMFWbeO-_d4' // Cambio aquí
+    data.results.forEach(async (movie) => {
+      await atributosMovies(movie, API_URL, API_KEY, IMAGE_BASE_URL, movieListContainer);
+    });
+  } catch (error) {
+    console.error("Error al buscar películas por título:", error);
   }
 };
-
-let page = 1;
-
-function moviesPopularies(){
-  fetch(`https://api.themoviedb.org/3/trending/all/day?page=${page}&language=en-US`, config)
-  .then(response => response.json())
-  .then(data => console.log(data));
-  
-}
-
-let search = "batman";
-page = 1;
-fetch(`https://api.themoviedb.org/3/search/movie?query=${search}&include_adult=false&language=en-US&page=${page}`, config) // Cambio aquí
-  .then(response => response.json())
-  .then(data => console.log(data.results.map(d => d.title + " " + d.release_date)));
-
-let movieID = 2661;
-fetch(`https://api.themoviedb.org/3/movie/${movieID}`, config)
-  .then(response => response.json())
-  .then(data => console.log(data));
-
-
-
-
-
-//modal
