@@ -1,8 +1,9 @@
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", (e) => {
   const API_KEY = "d62e671e72a3270f6005a951e144404c"; // Reemplaza con tu clave de API de TMDb
   const API_URL = "https://api.themoviedb.org/3";
   const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+  e.preventDefault();
   
   // Elemento donde se mostrarán las películas
   const movieListContainer = document.getElementById("movie-list");
